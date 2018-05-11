@@ -1,0 +1,16 @@
+.idea/
+build/
+cover/
+dist/
+.tox/
+.coverage
+*.pyc
+.idea
+*.iml
+*.xml
+*.log
+*.DS_Store*
+cache-store
+cache-config
+*~
+.python-version
