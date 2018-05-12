@@ -3,12 +3,14 @@ import json
 import requests
 # from urllib import request, parse
 
-READ_AUTH_TOKEN = "BQA7NaDximJ0RWHIpbmjD5k3ZM_9Bf_YGOJUj0GQIcuCuejH4DsoW7cw6_3tJ0YVA6d5mD0E58kxCk7TnWMWkM1CYtx1ikVtjwoEvWP5_eijYgh1CbdFOzQz7av5WsG_2NRVypJj4DWuTXzJ_gENMxUwM0E0CbMzdwdBVu_OTtOv4kZ-ecufo_Ga5bfSFXaK1QKW6Vb0Ykt0o7lBE-6DSZ3zL6YVVCDf6a9hFVUXMREbVUQdoTtCKUficmVgTElZ3ceONp64vBc"
-MODIFY_AUTH_TOKEN = "BQCwi6qoSgrzq2ug14Qj9a2mCQPgiqFy3fQ7zvE2eFScL7Qwg1wzQpWOMdOyN-6boQl0oSp3J4qpJ0NeWzgiE46guhfVsnyeHH0L8P8n8ZGJiZ3mPT83dsZFNRH9BHnx6iIvzblQkjwdwq8NoeyVpBgeu0zUPI4IIG0_V6f9aCmy-Oi4TDzLrlQBx5W8L7WJbeMzFucQ0iNTElviQyiZNbvaHczVpvrsEBWSNYctK69gQUzEtebRuXs1EORC8IV_EJGa-Q"
+READ_AUTH_TOKEN = "BQBBy909C3SO1d0QeXqL4JCHDKTwA8HXLJycoBtoh29MEoFTEFhoerpDfzUf5asPwBeQnIaTyVhCvz_qTY9ug7_E7YSGIM70QJExPF_WfDIGqzBCULYbFir2NhgCSZGSkbiNJcD2SzLBxBl0Y-47PBYKUHk47z-prwLQZV1IcmeIaKRKmjTDdFmgrmVA2MwpF-DQMFOalO-1LX-Q_1mrTinp6RtfDG0qKZLenPJYAjyG9SbLLhegF-kG58khIunGJlITNw"
+MODIFY_AUTH_TOKEN = "BQDTtifzIaXRntfMyG6NmskeXSUg4AEkWLiAOjM_KPfANAKYokSFlcsw1wsDVog26jGwfYN9adCoMe5LrZ0mnJ0cLuA_cJb7KYaVfbwHZGXXWElHxOET3mynJPY_qq305NVen5fX4hSGi_Ef0Jf2e5bsxV70RW5XjfS2cVjc7WVmwtABafvLOdtjYl21EZuVPH25CIy0ahACBQoKtQU0zSXCARbi17b1yjM3BVGRzkYxCmfeQBkplQxbY2vos8Ufk_43cw"
 
 ALBUM_URI = "https://api.spotify.com/v1/me/albums"
+
 GET_HEADERS = {'Authorization': "Bearer %s" % READ_AUTH_TOKEN,
                "Content-Type": "application/json"}
+
 PUT_HEADERS = {'Authorization': "Bearer %s" % MODIFY_AUTH_TOKEN,
                "Content-Type": "application/json"}
 
@@ -72,20 +74,37 @@ def put_artists():
     pass
 
 
-def post_albums(album_ids):
+def post_albums(album_ids, limit=20):
 
     length = len(album_ids)
-    limit = 49
     resp = ""
 
     for i in range(0, length, limit):
-        # print(json.dumps(album_ids[i:i + limit]))
+        body = json.dumps(album_ids[i:i + limit])
+        print("saving albums: " + body)
+
         try:
-            response = requests.put(
+            resp = requests.put(ALBUM_URI, headers=PUT_HEADERS, data=body)
+
+            print(resp)
+
+        except requests.RequestException:
+            print("oh crap, get request failed, don't ask why ", resp)
+
+        time.sleep(5)
+
+
+def delete_albums(album_ids, limit=20):
+    length = len(album_ids)
+    resp = ""
+
+    for i in range(0, length, limit):
+        try:
+            # body = json.dumps(album_ids[i:i + limit])
+            # print(body)
+            response = requests.delete(
                 ALBUM_URI,
                 headers=PUT_HEADERS,
-                # params={"ids": json.dumps(album_ids[i:i + limit])}
-
                 data=json.dumps(album_ids[i:i + limit])
             )
 
@@ -94,7 +113,7 @@ def post_albums(album_ids):
         except requests.RequestException:
             print("oh crap, get request failed, don't ask why ", resp)
 
-        time.sleep(1)
+        time.sleep(3)
 
 
 if __name__ == "__main__":
@@ -103,4 +122,3 @@ if __name__ == "__main__":
     if album_list:
         post_albums(album_list)
 
-    # post_albums([])
