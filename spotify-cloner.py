@@ -3,15 +3,15 @@ import json
 import requests
 # from urllib import request, parse
 
-READ_AUTH_TOKEN = "BQBBy909C3SO1d0QeXqL4JCHDKTwA8HXLJycoBtoh29MEoFTEFhoerpDfzUf5asPwBeQnIaTyVhCvz_qTY9ug7_E7YSGIM70QJExPF_WfDIGqzBCULYbFir2NhgCSZGSkbiNJcD2SzLBxBl0Y-47PBYKUHk47z-prwLQZV1IcmeIaKRKmjTDdFmgrmVA2MwpF-DQMFOalO-1LX-Q_1mrTinp6RtfDG0qKZLenPJYAjyG9SbLLhegF-kG58khIunGJlITNw"
-MODIFY_AUTH_TOKEN = "BQDTtifzIaXRntfMyG6NmskeXSUg4AEkWLiAOjM_KPfANAKYokSFlcsw1wsDVog26jGwfYN9adCoMe5LrZ0mnJ0cLuA_cJb7KYaVfbwHZGXXWElHxOET3mynJPY_qq305NVen5fX4hSGi_Ef0Jf2e5bsxV70RW5XjfS2cVjc7WVmwtABafvLOdtjYl21EZuVPH25CIy0ahACBQoKtQU0zSXCARbi17b1yjM3BVGRzkYxCmfeQBkplQxbY2vos8Ufk_43cw"
+READ_AUTH_TOKEN = "BQB9sSwZ5EjWXD-8cfbfskJwq240r3xJmccyqxsot6PRG1vQLinh5LO5bDsQOjxFQhzGBPYXExL4UveM1yq0C6SREMeJ_wsxTdkiNzgUQmTTzdyuj9ZHSPTVVMBF6zsoBbJmG2mbLRCsWGIj1UbhQJpHL-QpGZ4ow2RV6ebPovWe3r5PTdnTNI_sNZraBIb32JY8cA4i-1MsYddTAE7am23A8aOHpQbNRVAtWfcTYE0UJcuhe8gNI5WEft7Fy_P4GSIuVQPndMg"
+MODIFY_AUTH_TOKEN = "BQA1uf4lLIeLglfru012_XZ5k8kkwBh505tYfC8014Ryu6j-mGJckSAN6Y4gwfWghLdV9XBsrFPDSdbF3mUT80ELPEjaZsxE4kRDDc505fNB5xE1qDiTEfYdgb0xeaUrM6FrTyErLqlnLQcpI1PN22zdp9tpEnlHMhRVTAY0BhJz7WDsypUmSblMJ3sGq3_tLLHgynp8lNwP6Fwb83nKBOAFtUUaXLSeKvi174eWD4V3n6stOF5nqteHFuVpdTqj31NYsA"
 
-ALBUM_URI = "https://api.spotify.com/v1/me/albums"
+SPOTIFY_URI = "https://api.spotify.com/v1/me/"
 
-GET_HEADERS = {'Authorization': "Bearer %s" % READ_AUTH_TOKEN,
+GET_HEADERS = {"Authorization": "Bearer %s" % READ_AUTH_TOKEN,
                "Content-Type": "application/json"}
 
-PUT_HEADERS = {'Authorization': "Bearer %s" % MODIFY_AUTH_TOKEN,
+PUT_HEADERS = {"Authorization": "Bearer %s" % MODIFY_AUTH_TOKEN,
                "Content-Type": "application/json"}
 
 
@@ -19,7 +19,7 @@ def run_transfer():
     pass
 
 
-def get_albums(limit=50, output='my_spotify_albums.json'):
+def get_albums(limit=50):
 
     initial_call = True
     total = 9999999
@@ -29,18 +29,18 @@ def get_albums(limit=50, output='my_spotify_albums.json'):
 
     while offset < total:
         try:
-            response = requests.get(ALBUM_URI,
+            response = requests.get(SPOTIFY_URI + "albums",
                                     headers=GET_HEADERS,
-                                    params={'limit': limit, 'offset': offset})
+                                    params={"limit": limit, "offset": offset})
             resp = response.json()
 
             if "error" in resp:
                 break
 
-            albums.extend(resp['items'])
+            albums.extend(resp["items"])
 
             if initial_call:
-                total = resp['total']
+                total = resp["total"]
                 initial_call = False
 
             print("Retrieving albums %d - %d of %d" % (offset,
@@ -48,25 +48,85 @@ def get_albums(limit=50, output='my_spotify_albums.json'):
                                                        total))
             offset += limit
 
-        except requests.RequestException:
+        except Exception as e:
             print("oh crap, get request failed, don't ask why")
 
     if "error" not in resp:
-        album_ids = [item['album']['id'] for item in albums]
+        album_ids = [item["album"]["id"] for item in albums]
         return album_ids
     else:
         print(resp)
 
 
+def get_tracks(limit=50):
+    initial_call = True
+    total = 9999999
+    offset = 0
+    tracks = []
+    resp = ""
+
+    while offset < total:
+        try:
+            response = requests.get(SPOTIFY_URI + "tracks",
+                                    headers=GET_HEADERS,
+                                    params={"limit": limit, "offset": offset})
+            resp = response.json()
+
+            if "error" in resp:
+                break
+
+            tracks.extend(resp["items"])
+
+            if initial_call:
+                total = resp["total"]
+                initial_call = False
+
+            print("Retrieving tracks %d - %d of %d" % (offset,
+                                                       offset+limit,
+                                                       total))
+            offset += limit
+
+        except Exception as e:
+            print("oh crap, get request failed, don't ask why")
+
+    if "error" not in resp:
+        track_ids = [item["track"]["id"] for item in tracks]
+        return track_ids
+    else:
+        print(resp)
+
+
+def put_tracks(track_ids, limit=20):
+
+    length = len(track_ids)
+    resp = ""
+
+    for i in range(0, length, limit):
+        body = json.dumps(track_ids[i:i + limit])
+        print("saving tracks: " + body)
+
+        try:
+            resp = requests.put(SPOTIFY_URI + "tracks",
+                                headers=PUT_HEADERS,
+                                data=body)
+
+            print(resp)
+
+        except Exception as e:
+            print("oh crap, get request failed, don't ask why ", resp)
+
+        time.sleep(5)
+
+
+def get_playlists():
+    pass
+
+
+def put_playlists():
+    pass
+
+
 def get_artists():
-    pass
-
-
-def show_albums():
-    pass
-
-
-def show_artists():
     pass
 
 
@@ -84,11 +144,13 @@ def post_albums(album_ids, limit=20):
         print("saving albums: " + body)
 
         try:
-            resp = requests.put(ALBUM_URI, headers=PUT_HEADERS, data=body)
+            resp = requests.put(SPOTIFY_URI + "albums",
+                                headers=PUT_HEADERS,
+                                data=body)
 
             print(resp)
 
-        except requests.RequestException:
+        except Exception as e:
             print("oh crap, get request failed, don't ask why ", resp)
 
         time.sleep(5)
@@ -103,22 +165,28 @@ def delete_albums(album_ids, limit=20):
             # body = json.dumps(album_ids[i:i + limit])
             # print(body)
             response = requests.delete(
-                ALBUM_URI,
+                SPOTIFY_URI + "albums",
                 headers=PUT_HEADERS,
                 data=json.dumps(album_ids[i:i + limit])
             )
 
             print(response.text)
 
-        except requests.RequestException:
+        except Exception as e:
             print("oh crap, get request failed, don't ask why ", resp)
 
         time.sleep(3)
 
 
 if __name__ == "__main__":
-    album_list = get_albums()
+    # album_list = get_albums()
+    track_list = get_tracks()
+    print(track_list)
+    if track_list:
+        put_tracks(track_list)
+    # artist_list = get_artists()
+    # playlists = get_playlists()
 
-    if album_list:
-        post_albums(album_list)
+    # if album_list:
+    #     post_albums(album_list)
 
